@@ -237,6 +237,13 @@ h1,h2,h3,.fn{font-family:'Fredoka One',cursive;}
   <div class="tfg" id="trg"></div>
 </div>
 
+<!-- JOURNEY -->
+<div class="screen" id="sjourney">
+  <h2 class="fn" style="font-size:1.8rem;margin-bottom:4px">🗺️ El Viaje de Quino</h2>
+  <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px" id="jdesc">Completa el Gran Desafío para avanzar</p>
+  <div id="jmap" style="display:flex;flex-direction:column;gap:14px"></div>
+</div>
+
 <!-- PARENTAL -->
 <div class="screen" id="spar">
   <div id="plk">
@@ -292,6 +299,9 @@ h1,h2,h3,.fn{font-family:'Fredoka One',cursive;}
   <div class="ni" id="nav-str" onclick="goScreen('str')">
     <span class="nic">🏆</span><span class="nil">Trofeos</span>
   </div>
+  <div class="ni" id="nav-sjourney" onclick="goScreen('sjourney')">
+    <span class="nic">🗺️</span><span class="nil">Viaje</span>
+  </div>
   <div class="ni" id="nav-spar" onclick="goScreen('spar')">
     <span class="nic">👨‍👧</span><span class="nil">Padres</span>
   </div>
@@ -330,6 +340,11 @@ var TROPH=[
   {id:'expl',    icon:'🗺️',name:'Explorador',        desc:'Intenta al menos 5 etapas distintas',  ok:function(s){return Object.keys(s.stages).length>=5;}},
   {id:'sudoku',  icon:'🧩',name:'Maestro del Sudoku',  desc:'Completa el Sudoku Deportivo',          ok:function(s){return s.stages['sudoku']&&s.stages['sudoku'].done;}},
   {id:'wsearch', icon:'🔍',name:'Detective de Letras',  desc:'Completa la Sopa de Letras',            ok:function(s){return s.stages['wordsearch']&&s.stages['wordsearch'].done;}},
+  {id:'spell',   icon:'✏️',name:'Deletreador Experto',  desc:'Completa Deletrea en Inglés',           ok:function(s){return s.stages['spelling']&&s.stages['spelling'].done;}},
+  {id:'match',   icon:'🔗',name:'Conector Maestro',     desc:'Completa Une las Palabras',             ok:function(s){return s.stages['matching']&&s.stages['matching'].done;}},
+  {id:'tf',      icon:'🤔',name:'Sabelotodo',           desc:'Completa Verdadero o Falso',            ok:function(s){return s.stages['truefalse']&&s.stages['truefalse'].done;}},
+  {id:'journey1',icon:'🗺️',name:'Primera Meta',         desc:'Consigue tu primera parada del viaje',  ok:function(s){return (s.journeyStop||0)>=1;}},
+  {id:'journeyAll',icon:'🌟',name:'Leyenda del Viaje',  desc:'Completa todas las paradas del viaje',  ok:function(s){return (s.journeyStop||0)>=6;}},
 ];
 
 // ── STAGES DEF ──
@@ -341,7 +356,21 @@ var STAGES=[
   {id:'climbing',  name:'Escalada Mental 🧗',       desc:'Lógica y problemas de escalada',         sport:'climbing',  emoji:'🧗'},
   {id:'sudoku',    name:'Sudoku Deportivo 🧩',      desc:'Completa el tablero 4x4 con números e iconos', sport:'english', emoji:'🧩'},
   {id:'wordsearch',name:'Sopa de Letras 🔍',        desc:'Encuentra las palabras escondidas',      sport:'climbing',  emoji:'🔍'},
-  {id:'challenge', name:'El Gran Desafío ⚡',       desc:'Mezcla de todo — ¡el reto final!',       sport:'math',      emoji:'⚡',needs:['basketball','tennis','english']},
+  {id:'spelling',  name:'Deletrea en Inglés ✏️',    desc:'Completa las letras que faltan',         sport:'english',   emoji:'✏️'},
+  {id:'matching',  name:'Une las Palabras 🔗',      desc:'Conecta cada dibujo con su palabra en inglés', sport:'english', emoji:'🔗'},
+  {id:'truefalse', name:'¿Verdadero o Falso? 🤔',   desc:'Frases en inglés — ¿son ciertas?',       sport:'english',   emoji:'🤔'},
+  {id:'challenge', name:'El Gran Desafío ⚡',       desc:'¡Supera todas las pruebas para avanzar en tu viaje!', sport:'math', emoji:'⚡',
+    needs:['basketball','chess','tennis','english','climbing','sudoku','wordsearch','spelling','matching','truefalse']},
+];
+
+// ── JOURNEY MAP (unlocked one stop per Gran Desafío completion) ──
+var JOURNEY=[
+  {id:'nba',     name:'Estadio NBA',        emoji:'🏀', desc:'¡Jugaste en la NBA con los mejores!',         color:'#FF6B35'},
+  {id:'wimbledon',name:'Wimbledon',          emoji:'🎾', desc:'¡Ganaste el torneo más famoso del tenis!',    color:'#FFD700'},
+  {id:'everest', name:'El Everest',         emoji:'🏔️', desc:'¡Llegaste a la cima de la montaña más alta!', color:'#E53935'},
+  {id:'london',  name:'Londres',            emoji:'🇬🇧', desc:'¡Hablas inglés como un campeón mundial!',     color:'#00BCD4'},
+  {id:'chess_wc',name:'Mundial de Ajedrez', emoji:'♟️', desc:'¡Campeón del mundo de ajedrez!',              color:'#4CAF50'},
+  {id:'olympics',name:'Juegos Olímpicos',   emoji:'🥇', desc:'¡Medalla de oro olímpica! Eres una leyenda.', color:'#9C27B0'},
 ];
 
 // ── QUESTIONS ──
@@ -576,6 +605,52 @@ var POOL_ENG=[
   {q:'🇬🇧 How do you say REGLA in English?',a:'Ruler',opts:['Backpack','Ruler','Table','Chair'],emoji:'📏',hint:'You use it to draw straight lines.'},
   {q:'🇬🇧 How do you say GOMA in English?',a:'Eraser',opts:['Backpack','Window','Table','Eraser'],emoji:'🧹',hint:'You use it to erase pencil marks.'},
   {q:'🇬🇧 How do you say TIJERAS in English?',a:'Scissors',opts:['Eraser','Pencil','Ruler','Scissors'],emoji:'✂️',hint:'You use them to cut paper.'},
+  {q:'🇬🇧 The cat is ON the table. Where is the cat?',a:'On the table',opts:['Under the table','On the table','Behind the table','In the table'],emoji:'🐱',hint:'ON means the cat is touching the top of the table.'},
+  {q:'🇬🇧 The ball is UNDER the chair. Where is the ball?',a:'Under the chair',opts:['On the chair','Under the chair','Next to the chair','Over the chair'],emoji:'⚽',hint:'UNDER means below something.'},
+  {q:'🇬🇧 Which word means \'dentro de\' in English?',a:'In',opts:['On','Under','In','Behind'],emoji:'📦',hint:'IN means inside a box or a room.'},
+  {q:'🇬🇧 Which word means \'encima de\' in English?',a:'On',opts:['On','Under','Behind','In'],emoji:'📚',hint:'ON means on top of something.'},
+  {q:'🇬🇧 Which word means \'debajo de\' in English?',a:'Under',opts:['On','Under','In front of','Next to'],emoji:'🛏️',hint:'UNDER means below, like a monster under the bed!'},
+  {q:'🇬🇧 Which word means \'al lado de\' in English?',a:'Next to',opts:['Next to','Under','On','Behind'],emoji:'👫',hint:'NEXT TO means right beside something.'},
+  {q:'🇬🇧 Which word means \'detrás de\' in English?',a:'Behind',opts:['In front of','Behind','Under','On'],emoji:'🙈',hint:'BEHIND means at the back of something.'},
+  {q:'🇬🇧 Which word means \'delante de\' in English?',a:'In front of',opts:['Behind','In front of','Under','Next to'],emoji:'🙋',hint:'IN FRONT OF means at the front of something.'},
+  {q:'🇬🇧 Which animal says \'Woof Woof\'?',a:'Dog',opts:['Cat','Dog','Cow','Duck'],emoji:'🐶',hint:'Man\'s best friend!'},
+  {q:'🇬🇧 Which animal says \'Meow\'?',a:'Cat',opts:['Dog','Cat','Bird','Horse'],emoji:'🐱',hint:'It likes to chase mice.'},
+  {q:'🇬🇧 Which animal says \'Moo\'?',a:'Cow',opts:['Pig','Cow','Sheep','Horse'],emoji:'🐮',hint:'It gives us milk!'},
+  {q:'🇬🇧 Which animal lives in water and has fins?',a:'Fish',opts:['Bird','Fish','Dog','Bear'],emoji:'🐟',hint:'It swims and breathes underwater.'},
+  {q:'🇬🇧 Which animal can fly and has feathers?',a:'Bird',opts:['Fish','Cat','Bird','Cow'],emoji:'🐦',hint:'It has wings and sings songs.'},
+  {q:'🇬🇧 Which animal is known as the King of the Jungle?',a:'Lion',opts:['Tiger','Lion','Bear','Elephant'],emoji:'🦁',hint:'It has a big mane and roars loudly.'},
+  {q:'🇬🇧 Which animal has a very long neck?',a:'Giraffe',opts:['Elephant','Giraffe','Zebra','Monkey'],emoji:'🦒',hint:'It eats leaves from tall trees.'},
+  {q:'🇬🇧 Which animal has black and white stripes?',a:'Zebra',opts:['Giraffe','Zebra','Tiger','Panda'],emoji:'🦓',hint:'It looks like a horse with stripes!'},
+  {q:'🇬🇧 Which animal loves bananas and climbs trees?',a:'Monkey',opts:['Bear','Monkey','Lion','Dog'],emoji:'🐵',hint:'It swings from branch to branch.'},
+  {q:'🇬🇧 Which animal is very big and has a long trunk?',a:'Elephant',opts:['Elephant','Horse','Giraffe','Bear'],emoji:'🐘',hint:'It is the biggest land animal!'},
+  {q:'🇬🇧 Which animal hops and has long ears?',a:'Rabbit',opts:['Rabbit','Dog','Cat','Mouse'],emoji:'🐰',hint:'It loves carrots and hops everywhere!'},
+  {q:'🇬🇧 Which animal lives in the sea and has 8 legs?',a:'Octopus',opts:['Fish','Octopus','Crab','Shark'],emoji:'🐙',hint:'Count its legs: it has eight!'},
+  {q:'🇬🇧 Which planet do we live on?',a:'Earth',opts:['Mars','Earth','Venus','Moon'],emoji:'🌍',hint:'It is our home planet, full of water and life!'},
+  {q:'🇬🇧 Which planet is known as the Red Planet?',a:'Mars',opts:['Earth','Mars','Jupiter','Venus'],emoji:'🔴',hint:'Its color is red, like fire!'},
+  {q:'🇬🇧 What do we call the star at the center of our solar system?',a:'Sun',opts:['Moon','Sun','Star','Earth'],emoji:'☀️',hint:'It gives us light and warmth every day.'},
+  {q:'🇬🇧 What do we call the object that orbits the Earth at night?',a:'Moon',opts:['Sun','Star','Moon','Planet'],emoji:'🌙',hint:'We can see it shining at night in the sky.'},
+  {q:'🇬🇧 Which planet is the biggest in our solar system?',a:'Jupiter',opts:['Earth','Mars','Jupiter','Mercury'],emoji:'🪐',hint:'It is huge — the biggest planet of all!'},
+  {q:'🇬🇧 What do we call the small lights we see in the sky at night?',a:'Stars',opts:['Stars','Clouds','Planets','Suns'],emoji:'⭐',hint:'They twinkle in the night sky.'},
+  {q:'🇬🇧 What do you use to see?',a:'Eyes',opts:['Ears','Eyes','Nose','Mouth'],emoji:'👀',hint:'You have two of them on your face!'},
+  {q:'🇬🇧 What do you use to hear?',a:'Ears',opts:['Eyes','Ears','Hands','Feet'],emoji:'👂',hint:'You have two of them, one on each side of your head.'},
+  {q:'🇬🇧 What do you use to smell?',a:'Nose',opts:['Mouth','Nose','Ears','Eyes'],emoji:'👃',hint:'It is in the middle of your face.'},
+  {q:'🇬🇧 What do you use to eat and talk?',a:'Mouth',opts:['Nose','Eyes','Mouth','Ears'],emoji:'👄',hint:'You open it to eat and to speak.'},
+  {q:'🇬🇧 What do you use to walk?',a:'Feet',opts:['Hands','Feet','Arms','Eyes'],emoji:'🦶',hint:'You have two of them, inside your shoes.'},
+  {q:'🇬🇧 What do you use to write and hold things?',a:'Hands',opts:['Feet','Legs','Hands','Head'],emoji:'✋',hint:'You have two, with five fingers each!'},
+  {q:'🇬🇧 What is at the top of your body, with your brain inside?',a:'Head',opts:['Head','Arm','Leg','Hand'],emoji:'🧠',hint:'Your eyes, nose, mouth and ears are all here.'},
+  {q:'🇬🇧 What do you use to run and kick a ball?',a:'Legs',opts:['Arms','Legs','Hands','Head'],emoji:'🦵',hint:'You have two and they help you run fast!'},
+  {q:'🇬🇧 What is the plural of CAT?',a:'Cats',opts:['Cat','Cats','Cates','Caties'],emoji:'🐱',hint:'Most words just add an \'S\' at the end!'},
+  {q:'🇬🇧 What is the plural of DOG?',a:'Dogs',opts:['Dog','Dogs','Doges','Dogies'],emoji:'🐶',hint:'Add an \'S\' at the end!'},
+  {q:'🇬🇧 What is the plural of BOOK?',a:'Books',opts:['Book','Books','Bookes','Bookies'],emoji:'📚',hint:'Add an \'S\' at the end!'},
+  {q:'🇬🇧 How do you say MAMÁ in English?',a:'Mom',opts:['Dad','Mom','Sister','Brother'],emoji:'👩',hint:'Short word: M-O-M.'},
+  {q:'🇬🇧 How do you say PAPÁ in English?',a:'Dad',opts:['Mom','Dad','Brother','Sister'],emoji:'👨',hint:'Short word: D-A-D.'},
+  {q:'🇬🇧 How do you say HERMANO in English?',a:'Brother',opts:['Sister','Brother','Mom','Dad'],emoji:'👦',hint:'Starts with "Bro-".'},
+  {q:'🇬🇧 How do you say HERMANA in English?',a:'Sister',opts:['Brother','Sister','Mom','Dad'],emoji:'👧',hint:'Starts with "Sis-".'},
+  {q:'🇬🇧 How do you say MANZANA in English?',a:'Apple',opts:['Banana','Apple','Orange','Grape'],emoji:'🍎',hint:'A red or green fruit, round shape.'},
+  {q:'🇬🇧 How do you say PLÁTANO in English?',a:'Banana',opts:['Apple','Banana','Orange','Pear'],emoji:'🍌',hint:'Yellow and curved, monkeys love it!'},
+  {q:'🇬🇧 How do you say PAN in English?',a:'Bread',opts:['Bread','Milk','Water','Rice'],emoji:'🍞',hint:'You make sandwiches with it.'},
+  {q:'🇬🇧 How do you say AGUA in English?',a:'Water',opts:['Milk','Water','Juice','Bread'],emoji:'💧',hint:'You drink it every day, it has no color.'},
+  {q:'🇬🇧 How do you say LECHE in English?',a:'Milk',opts:['Water','Milk','Juice','Bread'],emoji:'🥛',hint:'It\'s white and cows give it to us.'},
 ];
 var POOL_CLMB=[
   {q:'🧗 Una ruta tiene 2 presas y otra tiene 3. ¿Cuántas presas hay entre las dos?',a:'5',opts:['5','7','4','6'],emoji:'🧗',hint:'Suma: 2 + 3.'},
@@ -724,6 +799,9 @@ function getQs(id,aiQs){
   if(id==='climbing') return qClmb();
   if(id==='sudoku') return [{type:'sudoku'}];
   if(id==='wordsearch') return [{type:'wordsearch'}];
+  if(id==='spelling') return [{type:'spelling'}];
+  if(id==='matching') return [{type:'matching'}];
+  if(id==='truefalse') return [{type:'truefalse'}];
   if(id==='challenge') return qMix();
   return qBask();
 }
@@ -782,6 +860,7 @@ function goScreen(id){
   document.getElementById('bnav').style.display=id==='sg'?'none':'flex';
   if(id==='sh')renderHome();
   if(id==='str')renderTrophies();
+  if(id==='sjourney')renderJourney();
   if(id==='spar')renderParental();
 }
 function goHome(){stopBg();goScreen('sh');}
@@ -824,6 +903,25 @@ function renderHome(){
     var e=S.trophies.indexOf(t.id)>=0;
     ht.innerHTML+='<div class="tc '+(e?'e':'')+'"><div class="ti">'+(e?t.icon:'🔒')+'</div><div class="tn">'+t.name+'</div></div>';
   });
+
+  // Journey progress banner
+  var jStop=S.journeyStop||0;
+  var jBanner=document.getElementById('jbanner');
+  if(!jBanner){
+    jBanner=document.createElement('div');
+    jBanner.id='jbanner';
+    jBanner.style='background:var(--card);border:2px solid var(--yellow);border-radius:var(--r);padding:14px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:12px';
+    jBanner.onclick=function(){goScreen('sjourney');};
+    document.getElementById('htr').parentNode.insertBefore(jBanner, document.getElementById('htr'));
+  }
+  var nextStop=jStop<JOURNEY.length?JOURNEY[jStop]:null;
+  var challengeDef=STAGES.filter(function(s){return s.id==='challenge';})[0];
+  var stagesNeeded=challengeDef.needs;
+  var stagesDone=stagesNeeded.filter(function(id){return S.stages[id]&&S.stages[id].done;}).length;
+  jBanner.innerHTML='<span style="font-size:2rem">'+(nextStop?nextStop.emoji:'🏆')+'</span>'
+    +'<div><div style="font-weight:800;color:var(--yellow);font-size:.95rem">'+(nextStop?'Próxima meta: '+nextStop.name:'¡Viaje completo!')+'</div>'
+    +'<div style="font-size:.78rem;color:var(--text2)">'+stagesDone+'/'+stagesNeeded.length+' pruebas completadas · Vuelta '+(S.cyclesCompleted||0)+'</div></div>';
+
   var sl=document.getElementById('hsl');sl.innerHTML='';
   STAGES.forEach(function(st){
     var p=S.stages[st.id]||{};
@@ -853,6 +951,27 @@ function renderTrophies(){
     var e=S.trophies.indexOf(t.id)>=0;
     g.innerHTML+='<div class="tfc '+(e?'e':'')+'"><div class="tfi">'+(e?t.icon:'🔒')+'</div>'
       +'<div><div class="tfn">'+t.name+'</div><div class="tfd">'+t.desc+'</div></div></div>';
+  });
+}
+
+// ── JOURNEY SCREEN ──
+function renderJourney(){
+  var jStop=S.journeyStop||0;
+  document.getElementById('jdesc').textContent = jStop===0
+    ? 'Completa el Gran Desafío para empezar tu viaje'
+    : (jStop>=JOURNEY.length ? '¡Has completado todo el viaje, eres una leyenda!' : 'Vuelta '+(S.cyclesCompleted||0)+' · '+jStop+' de '+JOURNEY.length+' metas conseguidas');
+  var map=document.getElementById('jmap');map.innerHTML='';
+  JOURNEY.forEach(function(stop,i){
+    var unlocked=i<jStop;
+    var isNext=i===jStop;
+    map.innerHTML+='<div style="display:flex;align-items:center;gap:14px;background:var(--card);border:2px solid '+(unlocked?stop.color:'var(--border)')+';border-radius:var(--r);padding:14px;'+(unlocked?'':'opacity:.45')+'">'
+      +'<div style="font-size:2.2rem;'+(isNext&&!unlocked?'animation:pulse 1.5s infinite':'')+'">'+(unlocked?stop.emoji:'🔒')+'</div>'
+      +'<div style="flex:1">'
+        +'<div style="font-weight:800;font-size:1rem;color:'+(unlocked?'var(--text)':'var(--text2)')+'">'+stop.name+'</div>'
+        +'<div style="font-size:.78rem;color:var(--text2)">'+(unlocked?stop.desc:(isNext?'¡Tu próxima meta!':'Bloqueado'))+'</div>'
+      +'</div>'
+      +(unlocked?'<span style="font-size:1.4rem">✅</span>':'')
+    +'</div>';
   });
 }
 
@@ -961,7 +1080,9 @@ function startStage(id,aiQs){
   STAGES.forEach(function(s){if(s.id===id)def=s;});
   if(!def)return;
   updStreak();ATT={};
-  CG={id:id,def:def,qs:getQs(id,aiQs||null),qi:0,score:0,hits:0,isMem:id==='chess',isPuzzle:(id==='sudoku'||id==='wordsearch')};
+  CG={id:id,def:def,qs:getQs(id,aiQs||null),qi:0,score:0,hits:0,isMem:id==='chess',
+      isPuzzle:(id==='sudoku'||id==='wordsearch'||id==='matching'),
+      totalRounds:(id==='spelling'?5:id==='truefalse'?6:6)};
   document.getElementById('sg').className='screen active sport-'+def.sport;
   document.getElementById('gtit').textContent=def.name+(aiQs?' 🤖':'');
   goScreen('sg');
@@ -978,6 +1099,9 @@ function renderQ(){
   if(q.type==='memory'){renderMem();return;}
   if(q.type==='sudoku'){renderSudoku();return;}
   if(q.type==='wordsearch'){renderWordSearch();return;}
+  if(q.type==='spelling'){document.getElementById('gsub').textContent='Palabra 1 de '+CG.totalRounds;renderSpelling();return;}
+  if(q.type==='matching'){renderMatching();return;}
+  if(q.type==='truefalse'){document.getElementById('gsub').textContent='Frase 1 de '+CG.totalRounds;renderTrueFalse();return;}
   var att=ATT[CG.qi]||0;
   if(att===1)body.insertAdjacentHTML('beforeend','<div class="atb">⚠️ Segundo intento — ¡tú puedes, '+S.name+'!</div>');
   if(att>=2)body.insertAdjacentHTML('beforeend','<div class="atb" style="color:var(--red)">Fíjate en la pista 👇</div>');
@@ -1361,13 +1485,355 @@ function selectWSCell(cellEl){
   }
 }
 
+var SPELL_WORDS=[
+  {w:'TIGER',emoji:'🐯'},
+  {w:'APPLE',emoji:'🍎'},
+  {w:'CHAIR',emoji:'🪑'},
+  {w:'ELEPHANT',emoji:'🐘'},
+  {w:'FISH',emoji:'🐟'},
+  {w:'DOG',emoji:'🐶'},
+  {w:'BEAR',emoji:'🐻'},
+  {w:'GREEN',emoji:'🟢'},
+  {w:'BIRD',emoji:'🐦'},
+  {w:'WATER',emoji:'💧'},
+  {w:'TABLE',emoji:'🪑'},
+  {w:'GIRAFFE',emoji:'🦒'},
+  {w:'SUN',emoji:'☀️'},
+  {w:'EARS',emoji:'👂'},
+  {w:'FRIDAY',emoji:'📅'},
+  {w:'TEN',emoji:'🔟'},
+  {w:'PENCIL',emoji:'✏️'},
+  {w:'HORSE',emoji:'🐴'},
+  {w:'RABBIT',emoji:'🐰'},
+  {w:'MOM',emoji:'👩'},
+  {w:'CAT',emoji:'🐱'},
+  {w:'SUMMER',emoji:'☀️'},
+  {w:'HAND',emoji:'✋'},
+  {w:'BANANA',emoji:'🍌'},
+  {w:'MILK',emoji:'🥛'},
+  {w:'MONDAY',emoji:'📅'},
+  {w:'LION',emoji:'🦁'},
+  {w:'MOON',emoji:'🌙'},
+  {w:'HEAD',emoji:'🧠'},
+  {w:'LEGS',emoji:'🦵'},
+  {w:'BALL',emoji:'⚽'},
+  {w:'STAR',emoji:'⭐'},
+  {w:'WINTER',emoji:'❄️'},
+  {w:'EARTH',emoji:'🌍'},
+  {w:'BLUE',emoji:'🔵'},
+  {w:'MARS',emoji:'🔴'},
+  {w:'RED',emoji:'🔴'},
+  {w:'ORANGE',emoji:'🟠'},
+  {w:'PURPLE',emoji:'🟣'},
+  {w:'YELLOW',emoji:'🟡'},
+  {w:'EYES',emoji:'👀'},
+  {w:'BOOK',emoji:'📖'},
+  {w:'NOSE',emoji:'👃'},
+  {w:'DAD',emoji:'👨'},
+  {w:'FIVE',emoji:'5️⃣'},
+];
+
+// ── SPELLING / DICTADO (fill missing letters) ──
+var SPELL={word:'',emoji:'',blanks:[],display:[],letterBank:[],filled:{}};
+
+function renderSpelling(){
+  var entry=SPELL_WORDS[Math.floor(Math.random()*SPELL_WORDS.length)];
+  var word=entry.w;
+  var numBlanks = word.length<=4 ? 1 : (Math.random()<0.5?1:2);
+  var positions=shuffle(word.split('').map(function(c,i){return i;})).slice(0,numBlanks).sort(function(a,b){return a-b;});
+
+  SPELL={word:word,emoji:entry.emoji,blanks:positions,display:word.split(''),filled:{}};
+
+  var body=document.getElementById('gbody');
+  body.insertAdjacentHTML('beforeend','<div style="text-align:center;color:var(--text2);font-size:.88rem;font-weight:700">✏️ Completa las letras que faltan</div>');
+
+  var card=document.createElement('div');
+  card.className='qc pop';
+  card.innerHTML='<div class="qe">'+entry.emoji+'</div>';
+  var wordDisplay=document.createElement('div');
+  wordDisplay.id='spellWord';
+  wordDisplay.style='display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px';
+  word.split('').forEach(function(letter,i){
+    var box=document.createElement('div');
+    box.dataset.i=i;
+    var isBlank=positions.indexOf(i)>=0;
+    box.style='width:42px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;border-radius:8px;'
+      +(isBlank?'background:var(--bg3);border:2px dashed var(--yellow);color:var(--yellow);cursor:pointer;':'background:var(--bg2);border:2px solid var(--border);color:var(--text);');
+    box.textContent=isBlank?'?':letter;
+    if(isBlank){ box.onclick=function(){selectSpellBlank(i,box);}; }
+    wordDisplay.appendChild(box);
+  });
+  card.appendChild(wordDisplay);
+  body.appendChild(card);
+
+  // Letter bank: correct letters for blanks + distractors
+  var correctLetters=positions.map(function(i){return word[i];});
+  var alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var distractors=[];
+  while(distractors.length<4){
+    var L=alphabet[Math.floor(Math.random()*alphabet.length)];
+    if(correctLetters.indexOf(L)<0 && distractors.indexOf(L)<0) distractors.push(L);
+  }
+  var bank=shuffle(correctLetters.concat(distractors));
+  SPELL.letterBank=bank;
+  SPELL.selectedBlank=positions[0];
+
+  var picker=document.createElement('div');
+  picker.id='spellPicker';
+  picker.style='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:6px';
+  bank.forEach(function(letter){
+    var b=document.createElement('div');
+    b.className='ab';
+    b.style='width:50px;height:50px;font-size:1.3rem;display:flex;align-items:center;justify-content:center;padding:0';
+    b.textContent=letter;
+    b.onclick=function(){placeSpellLetter(letter);};
+    picker.appendChild(b);
+  });
+  body.appendChild(picker);
+
+  // Auto-select first blank
+  setTimeout(function(){
+    var firstBlank=document.querySelector('#spellWord [data-i="'+positions[0]+'"]');
+    if(firstBlank) selectSpellBlank(positions[0], firstBlank);
+  },50);
+
+  var checkBtn=document.createElement('button');
+  checkBtn.className='btn bp';
+  checkBtn.style='width:100%;max-width:280px;margin:0 auto;display:block';
+  checkBtn.textContent='✅ Comprobar';
+  checkBtn.onclick=checkSpelling;
+  body.appendChild(checkBtn);
+}
+
+function selectSpellBlank(i,boxEl){
+  document.querySelectorAll('#spellWord div').forEach(function(b){b.style.outline='none';});
+  boxEl.style.outline='3px solid var(--orange)';
+  SPELL.selectedBlank=i;
+}
+
+function placeSpellLetter(letter){
+  if(SPELL.selectedBlank===undefined||SPELL.selectedBlank===null)return;
+  var i=SPELL.selectedBlank;
+  SPELL.filled[i]=letter;
+  var box=document.querySelector('#spellWord [data-i="'+i+'"]');
+  if(box) box.textContent=letter;
+  snd('hint');
+  // auto-advance to next unfilled blank
+  var remaining=SPELL.blanks.filter(function(b){return SPELL.filled[b]===undefined;});
+  if(remaining.length>0){
+    var nextI=remaining[0];
+    var nextBox=document.querySelector('#spellWord [data-i="'+nextI+'"]');
+    if(nextBox) selectSpellBlank(nextI,nextBox);
+  }
+}
+
+function checkSpelling(){
+  var allCorrect=true;
+  SPELL.blanks.forEach(function(i){
+    if(SPELL.filled[i]!==SPELL.word[i]) allCorrect=false;
+  });
+  if(allCorrect){
+    S.correct++;S.answered++;CG.score+=10;CG.hits++;
+    document.getElementById('gsc').textContent=CG.score+' ⭐';
+    snd('ok');save();
+    CG.qi=(CG.qi||0)+1;
+    if(CG.qi>=CG.totalRounds){
+      finishStage();
+    }else{
+      document.getElementById('gsub').textContent='Palabra '+(CG.qi+1)+' de '+CG.totalRounds;
+      renderSpelling();
+    }
+  }else{
+    S.answered++;save();snd('no');
+    SPELL.blanks.forEach(function(i){
+      var box=document.querySelector('#spellWord [data-i="'+i+'"]');
+      if(box && SPELL.filled[i]!==SPELL.word[i]){
+        box.style.borderColor='var(--red)';
+        setTimeout(function(){box.style.borderColor='var(--yellow)';},800);
+      }
+    });
+  }
+}
+
+// ── MATCHING (connect images with English words) ──
+var MATCH={pairs:[],selectedImg:null,selectedWord:null,matched:[],lines:[]};
+
+var MATCH_ITEMS=[
+  {emoji:'🐶',word:'Dog'},{emoji:'🐱',word:'Cat'},{emoji:'☀️',word:'Sun'},{emoji:'🌙',word:'Moon'},
+  {emoji:'🍎',word:'Apple'},{emoji:'🍌',word:'Banana'},{emoji:'⚽',word:'Ball'},{emoji:'📖',word:'Book'},
+  {emoji:'🐟',word:'Fish'},{emoji:'🐦',word:'Bird'},{emoji:'🦁',word:'Lion'},{emoji:'🐻',word:'Bear'},
+  {emoji:'💧',word:'Water'},{emoji:'🥛',word:'Milk'},{emoji:'✋',word:'Hand'},{emoji:'👀',word:'Eyes'},
+];
+
+function renderMatching(){
+  var items=shuffle(MATCH_ITEMS).slice(0,4);
+  MATCH={pairs:items,selectedImg:null,selectedWord:null,matched:[],lines:[]};
+
+  var body=document.getElementById('gbody');
+  body.insertAdjacentHTML('beforeend','<div style="text-align:center;color:var(--text2);font-size:.88rem;font-weight:700">🔗 Une cada dibujo con su palabra en inglés</div>');
+
+  var wrap=document.createElement('div');
+  wrap.style='display:flex;justify-content:space-between;gap:20px;max-width:320px;margin:10px auto';
+
+  var imgCol=document.createElement('div');
+  imgCol.style='display:flex;flex-direction:column;gap:12px';
+  items.forEach(function(item,i){
+    var el=document.createElement('div');
+    el.className='ab';
+    el.dataset.idx=i;
+    el.style='width:70px;height:60px;font-size:2rem;display:flex;align-items:center;justify-content:center;padding:0';
+    el.textContent=item.emoji;
+    el.onclick=function(){selectMatchImg(i,el);};
+    imgCol.appendChild(el);
+  });
+
+  var wordsShuffled=shuffle(items.map(function(it,i){return {word:it.word,origIdx:i};}));
+  var wordCol=document.createElement('div');
+  wordCol.style='display:flex;flex-direction:column;gap:12px';
+  wordsShuffled.forEach(function(w){
+    var el=document.createElement('div');
+    el.className='ab';
+    el.dataset.orig=w.origIdx;
+    el.style='width:100px;height:60px;font-size:1rem;display:flex;align-items:center;justify-content:center;padding:0';
+    el.textContent=w.word;
+    el.onclick=function(){selectMatchWord(w.origIdx,el);};
+    wordCol.appendChild(el);
+  });
+
+  wrap.appendChild(imgCol);
+  wrap.appendChild(wordCol);
+  body.appendChild(wrap);
+}
+
+function selectMatchImg(i,el){
+  if(MATCH.matched.indexOf(i)>=0)return;
+  document.querySelectorAll('[data-idx]').forEach(function(e){e.style.outline='none';});
+  el.style.outline='3px solid var(--orange)';
+  MATCH.selectedImg=i;
+  tryMatch();
+}
+function selectMatchWord(origIdx,el){
+  if(MATCH.matched.indexOf(origIdx)>=0)return;
+  document.querySelectorAll('[data-orig]').forEach(function(e){e.style.outline='none';});
+  el.style.outline='3px solid var(--orange)';
+  MATCH.selectedWord=origIdx;
+  tryMatch();
+}
+function tryMatch(){
+  if(MATCH.selectedImg===null||MATCH.selectedWord===null)return;
+  if(MATCH.selectedImg===MATCH.selectedWord){
+    MATCH.matched.push(MATCH.selectedImg);
+    document.querySelector('[data-idx="'+MATCH.selectedImg+'"]').classList.add('ok');
+    document.querySelector('[data-orig="'+MATCH.selectedWord+'"]').classList.add('ok');
+    S.correct++;S.answered++;CG.score+=10;CG.hits++;
+    document.getElementById('gsc').textContent=CG.score+' ⭐';
+    snd('ok');save();
+    if(MATCH.matched.length===MATCH.pairs.length){
+      setTimeout(function(){finishStage();},600);
+    }
+  }else{
+    S.answered++;save();snd('no');
+    var imgEl=document.querySelector('[data-idx="'+MATCH.selectedImg+'"]');
+    var wordEl=document.querySelector('[data-orig="'+MATCH.selectedWord+'"]');
+    if(imgEl)imgEl.classList.add('no');
+    if(wordEl)wordEl.classList.add('no');
+    setTimeout(function(){
+      if(imgEl)imgEl.classList.remove('no');
+      if(wordEl)wordEl.classList.remove('no');
+    },500);
+  }
+  MATCH.selectedImg=null;MATCH.selectedWord=null;
+  document.querySelectorAll('[data-idx],[data-orig]').forEach(function(e){e.style.outline='none';});
+}
+
+// ── TRUE OR FALSE ──
+var TF_FACTS=[
+  {q:'A cat says "Woof".',a:false,emoji:'🐱'},
+  {q:'A dog says "Woof".',a:true,emoji:'🐶'},
+  {q:'The sun is yellow.',a:true,emoji:'☀️'},
+  {q:'The sky is green.',a:false,emoji:'🌳'},
+  {q:'A fish can fly.',a:false,emoji:'🐟'},
+  {q:'A bird can fly.',a:true,emoji:'🐦'},
+  {q:'We have two eyes.',a:true,emoji:'👀'},
+  {q:'We have three hands.',a:false,emoji:'✋'},
+  {q:'Monday comes before Tuesday.',a:true,emoji:'📅'},
+  {q:'A week has 10 days.',a:false,emoji:'📅'},
+  {q:'Bananas are blue.',a:false,emoji:'🍌'},
+  {q:'Apples can be red.',a:true,emoji:'🍎'},
+  {q:'Water is wet.',a:true,emoji:'💧'},
+  {q:'Fire is cold.',a:false,emoji:'🔥'},
+  {q:'A lion is a king of the jungle.',a:true,emoji:'🦁'},
+  {q:'Elephants are very small.',a:false,emoji:'🐘'},
+  {q:'We use our ears to hear.',a:true,emoji:'👂'},
+  {q:'We use our nose to see.',a:false,emoji:'👃'},
+  {q:'December is a winter month.',a:true,emoji:'❄️'},
+  {q:'There are 5 days in a week.',a:false,emoji:'📅'},
+  {q:'The moon shines at night.',a:true,emoji:'🌙'},
+  {q:'Cows give us milk.',a:true,emoji:'🐮'},
+  {q:'Fish live in trees.',a:false,emoji:'🌳'},
+  {q:'A tiger has stripes.',a:true,emoji:'🐯'},
+  {q:'Ten comes after nine.',a:true,emoji:'🔟'},
+  {q:'Friday comes before Monday in the week.',a:false,emoji:'📅'},
+  {q:'We use our legs to walk.',a:true,emoji:'🦵'},
+  {q:'Snow is hot.',a:false,emoji:'❄️'},
+];
+
+function renderTrueFalse(){
+  var fact=TF_FACTS[CG.qi % TF_FACTS.length];
+  var body=document.getElementById('gbody');
+  body.innerHTML='';
+  var pct=(CG.qi/CG.totalRounds)*100;
+  body.insertAdjacentHTML('beforeend','<div class="gpw"><div class="gp" style="width:'+pct+'%"></div></div>');
+  body.insertAdjacentHTML('beforeend','<div class="qc pop"><div class="qe">'+fact.emoji+'</div><div class="qt">'+fact.q+'</div></div>');
+
+  var grid=document.createElement('div');
+  grid.style='display:grid;grid-template-columns:1fr 1fr;gap:14px';
+  var trueBtn=document.createElement('div');
+  trueBtn.className='ab';
+  trueBtn.style='padding:24px;font-size:1.3rem;background:rgba(76,175,80,.15);border-color:var(--green);color:var(--green)';
+  trueBtn.textContent='✅ TRUE';
+  trueBtn.onclick=function(){answerTF(true,fact,trueBtn,falseBtn);};
+  var falseBtn=document.createElement('div');
+  falseBtn.className='ab';
+  falseBtn.style='padding:24px;font-size:1.3rem;background:rgba(229,57,53,.15);border-color:var(--red);color:var(--red)';
+  falseBtn.textContent='❌ FALSE';
+  falseBtn.onclick=function(){answerTF(false,fact,trueBtn,falseBtn);};
+  grid.appendChild(trueBtn);grid.appendChild(falseBtn);
+  body.appendChild(grid);
+}
+
+function answerTF(choice,fact,trueBtn,falseBtn){
+  trueBtn.style.pointerEvents='none';falseBtn.style.pointerEvents='none';
+  var isOk=choice===fact.a;
+  S.answered++;
+  if(isOk){
+    S.correct++;CG.score+=8;CG.hits++;
+    document.getElementById('gsc').textContent=CG.score+' ⭐';
+    (choice?trueBtn:falseBtn).style.outline='3px solid var(--green)';
+    snd('ok');
+  }else{
+    (choice?trueBtn:falseBtn).style.outline='3px solid var(--red)';
+    (fact.a?trueBtn:falseBtn).style.outline='3px solid var(--green)';
+    snd('no');
+  }
+  save();
+  setTimeout(function(){
+    CG.qi++;
+    if(CG.qi>=CG.totalRounds){finishStage();}
+    else{
+      document.getElementById('gsub').textContent='Frase '+(CG.qi+1)+' de '+CG.totalRounds;
+      renderTrueFalse();
+    }
+  },1000);
+}
+
 // ── FINISH ──
 function finishStage(forcedStars){
   stopBg();
   var stars;
   if(forcedStars){ stars=forcedStars; }
   else{
-    var total=CG.isMem?MEM.cards.length/2:CG.qs.length;
+    var total=CG.isMem?MEM.cards.length/2:(CG.totalRounds&&(CG.id==='spelling'||CG.id==='truefalse')?CG.totalRounds:(CG.id==='matching'?MATCH.pairs.length:CG.qs.length));
     var pct=total>0?CG.hits/total:1;
     stars=pct>=.9?3:pct>=.6?2:1;
   }
@@ -1376,6 +1842,13 @@ function finishStage(forcedStars){
   S.stages[CG.id]={done:true,stars:Math.max(prev.stars||0,stars),tries:(prev.tries||0)+1};
   addXP(xp);
   var newTr=chkTr();save();
+
+  // ── Special handling: completing the Gran Desafío triggers the journey + cycle reset ──
+  if(CG.id==='challenge'){
+    renderJourneyComplete();
+    return;
+  }
+
   if(S.anim)confetti();
   setTimeout(function(){snd(newTr.length?'trophy':'win');},200);
   var body=document.getElementById('gbody');
@@ -1397,6 +1870,40 @@ function finishStage(forcedStars){
     +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">'
     +newQBtn
     +(CG.isPuzzle?'<button class="btn bp" style="width:100%" onclick="startStage(\''+stageId+'\')">🔄 Repetir</button>':'')
+    +'<button class="btn bs" style="width:100%" onclick="goHome()">🏠 Volver al inicio</button>'
+    +'</div></div>';
+}
+
+// ── JOURNEY: special celebration when Gran Desafío is completed ──
+function renderJourneyComplete(){
+  if(!S.journeyStop) S.journeyStop = 0; // how many stops unlocked so far
+  var isNewStop = S.journeyStop < JOURNEY.length;
+  var stop = isNewStop ? JOURNEY[S.journeyStop] : JOURNEY[JOURNEY.length-1];
+  if(isNewStop) S.journeyStop++;
+
+  // Reset cycle: all stages except challenge go back to not-done; challenge gets re-locked
+  var newStages = {};
+  // (we keep nothing — full reset of "done" status for the new round)
+  S.stages = {};
+  S.cyclesCompleted = (S.cyclesCompleted||0) + 1;
+  save();
+
+  if(S.anim) confetti();
+  setTimeout(function(){ snd('trophy'); },200);
+  setTimeout(function(){ if(S.anim) confetti(); },600);
+
+  var body=document.getElementById('gbody');
+  body.innerHTML = '<div class="fin">'
+    +'<div class="fie bounce" style="font-size:6rem">'+stop.emoji+'</div>'
+    +'<div class="fit" style="color:'+stop.color+'">¡'+stop.name.toUpperCase()+'!</div>'
+    +'<div style="color:var(--text2);font-size:1rem;margin:12px 0 6px;max-width:280px;margin-left:auto;margin-right:auto">'+stop.desc+'</div>'
+    +'<div style="font-size:1.5rem;margin:14px 0">🎉🏆🎉</div>'
+    +'<div style="background:var(--card);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin:10px 0">'
+      +'<div style="font-weight:800;color:var(--yellow);margin-bottom:6px">Viaje de Quino · Vuelta '+S.cyclesCompleted+'</div>'
+      +'<div style="font-size:.8rem;color:var(--text2)">¡Todas las pruebas se han renovado! Vuelve a completarlas todas para seguir tu viaje.</div>'
+    +'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">'
+    +'<button class="btn bp" style="width:100%" onclick="goScreen(\'sjourney\')">🗺️ Ver mi viaje</button>'
     +'<button class="btn bs" style="width:100%" onclick="goHome()">🏠 Volver al inicio</button>'
     +'</div></div>';
 }
